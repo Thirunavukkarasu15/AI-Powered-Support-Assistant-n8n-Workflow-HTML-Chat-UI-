@@ -1,0 +1,137 @@
+{
+  "name": "Mail trigger proxy",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "ZUznIN8hWl713VqY",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/ZUznIN8hWl713VqY",
+          "cachedResultName": "Meeting scheduler"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {}
+        },
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        464,
+        0
+      ],
+      "id": "75eb118e-2859-43a1-b893-1fd3b23425b6",
+      "name": "Call 'Meeting scheduler'"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        672,
+        0
+      ],
+      "id": "e76904e4-d933-4381-afde-08e8bb5acc58",
+      "name": "No Operation, do nothing2"
+    },
+    {
+      "parameters": {
+        "content": "Just an Proxy workflow to avoid AI agent waiting for a response from the meeting scheduler workflow",
+        "height": 272,
+        "width": 880
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -32,
+        -80
+      ],
+      "typeVersion": 1,
+      "id": "75502d62-1f16-4348-8d85-6be735ed277e",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get input text\nconst input = $json.query;\n\n// Try to parse it as JSON if it looks like JSON\nlet parsed = {};\ntry {\n  parsed = typeof input === \"string\" && input.trim().startsWith(\"{\")\n    ? JSON.parse(input)\n    : {};\n} catch (e) {\n  parsed = {};\n}\n\n// Attempt to extract email using regex if not already provided\nif (!parsed.customer_email) {\n  const emailMatch = input.match(/[\\w.-]+@[\\w.-]+\\.\\w+/);\n  parsed.customer_email = emailMatch ? emailMatch[0] : \"\";\n}\n\n// Fill out the output fields safely\nreturn [\n  {\n    json: {\n      customer_email: parsed.customer_email || \"\",\n      customer_name: parsed.customer_name || \"Merchant\",\n      issue_summary: parsed.issue_summary || input || \"User query\",\n      preferred_time: parsed.preferred_time || new Date().toISOString(),\n      ticketId:\n        parsed.ticketId ||\n        new Date()\n          .toISOString()\n          .replace(/\\D/g, \"\")\n          .slice(0, 14) + Math.floor(Math.random() * 1000),\n    },\n  },\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "id": "4e5f4463-9bce-471a-85d1-b59a626022f2",
+      "name": "Javascript to convert text response into Json"
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        16,
+        0
+      ],
+      "id": "c7dd3172-99db-4e76-b010-811432fe5563",
+      "name": "Runs When triggered By AI incase of escalation"
+    }
+  ],
+  "pinData": {
+    "Runs When triggered By AI incase of escalation": [
+      {
+        "json": {
+          "query": "{\"customer_email\":\"thirunavukkarasuashok@gmail.com\",\"ticketId\":\"20251109124346\"}"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Call 'Meeting scheduler'": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Javascript to convert text response into Json": {
+      "main": [
+        [
+          {
+            "node": "Call 'Meeting scheduler'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Runs When triggered By AI incase of escalation": {
+      "main": [
+        [
+          {
+            "node": "Javascript to convert text response into Json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "73bad644-97a3-48cd-80e1-4864d7eeecb2",
+  "meta": {
+    "instanceId": "f40eb00b1e31aca938f8f19f3f1124fdcb9e4730b21fa668fcdeea5dedcd6b5b"
+  },
+  "id": "q8KB9rj6gq20JUg4",
+  "tags": []
+}

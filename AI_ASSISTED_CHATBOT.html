@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Gateway Support</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #0077b6 0%, #005f8e 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .chat-box {
+      width: 90%;
+      max-width: 500px;
+      height: 85vh;
+      background-color: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .chat-header {
+      background: linear-gradient(135deg, #0077b6 0%, #005f8e 100%);
+      color: white;
+      text-align: center;
+      padding: 20px;
+      font-weight: 600;
+      font-size: 18px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .session-info {
+      position: absolute;
+      left: 15px;
+      font-size: 11px;
+      opacity: 0.8;
+      font-weight: 400;
+    }
+
+    #new-chat-btn {
+      position: absolute;
+      right: 15px;
+      background-color: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+
+    #new-chat-btn:hover {
+      background-color: rgba(255, 255, 255, 0.3);
+      transform: scale(1.05);
+    }
+
+    .messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .message {
+      margin: 8px 0;
+      padding: 12px 16px;
+      border-radius: 18px;
+      max-width: 75%;
+      animation: slideIn 0.3s ease;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .user-message {
+      align-self: flex-end;
+      background: linear-gradient(135deg, #0077b6 0%, #005f8e 100%);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    .bot-message {
+      align-self: flex-start;
+      background-color: white;
+      color: #333;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .typing-indicator {
+      display: none;
+      align-self: flex-start;
+      padding: 12px 16px;
+      background: white;
+      border-radius: 18px;
+      width: fit-content;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      margin: 8px 0;
+    }
+
+    .typing-indicator.active {
+      display: block;
+    }
+
+    .typing-indicator span {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      margin-right: 4px;
+      background-color: #0077b6;
+      border-radius: 50%;
+      animation: typing 1.4s infinite;
+    }
+
+    .typing-indicator span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .typing-indicator span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes typing {
+      0%, 60%, 100% {
+        transform: translateY(0);
+        opacity: 0.3;
+      }
+      30% {
+        transform: translateY(-10px);
+        opacity: 1;
+      }
+    }
+
+    .file-selected {
+      font-size: 13px;
+      color: #333;
+      padding: 10px 15px;
+      background: #e3f2fd;
+      border-radius: 8px;
+      margin: 0 20px 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-left: 3px solid #0077b6;
+    }
+
+    .file-selected .close-btn {
+      cursor: pointer;
+      margin-left: 8px;
+      font-weight: bold;
+      color: #0077b6;
+      font-size: 16px;
+    }
+
+    .file-selected .close-btn:hover {
+      color: #005f8e;
+    }
+
+    .chat-input-container {
+      padding: 20px;
+      background: white;
+      border-top: 1px solid #e0e0e0;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .file-input-label {
+      cursor: pointer;
+      padding: 10px;
+      background: #f0f0f0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      flex-shrink: 0;
+    }
+
+    .file-input-label:hover {
+      background: #e0e0e0;
+      transform: scale(1.1);
+    }
+
+    .file-input-label svg {
+      width: 24px;
+      height: 24px;
+      fill: #0077b6;
+    }
+
+    #voiceFile {
+      display: none;
+    }
+
+    #userInput {
+      flex: 1;
+      padding: 12px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 25px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.3s;
+      font-family: inherit;
+    }
+
+    #userInput:focus {
+      border-color: #0077b6;
+    }
+
+    button[type="submit"] {
+      background: linear-gradient(135deg, #0077b6 0%, #005f8e 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    button[type="submit"]:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 119, 182, 0.4);
+    }
+
+    button[type="submit"]:active {
+      transform: translateY(0);
+    }
+
+    button[type="submit"]:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .error-message {
+      background: #ff4444;
+      color: white;
+      padding: 10px;
+      margin: 10px;
+      border-radius: 8px;
+      text-align: center;
+      animation: slideIn 0.3s ease;
+    }
+
+    .messages::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .messages::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    .messages::-webkit-scrollbar-thumb {
+      background: #0077b6;
+      border-radius: 3px;
+    }
+
+    .messages::-webkit-scrollbar-thumb:hover {
+      background: #005f8e;
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-box">
+    <div class="chat-header">
+      <span class="session-info" id="sessionInfo">Session: Loading...</span>
+      🤖 Payment Gateway Support
+      <button id="new-chat-btn">New Chat</button>
+    </div>
+    
+    <div class="messages" id="chatMessages">
+      <div class="bot-message message">👋 Hello! I'm your Payment Gateway Support Assistant. I can help you with integrations, API issues, transactions, and more. How can I assist you today?</div>
+      <div class="typing-indicator" id="typingIndicator">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+    
+    <div class="chat-input-container">
+      <label for="voiceFile" class="file-input-label" title="Upload voice file">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+          <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+        </svg>
+      </label>
+      <input type="file" id="voiceFile" accept="audio/*,.mp3,.wav,.ogg,.m4a">
+      <form id="chatForm" style="display: flex; flex: 1; gap: 10px; border: none;">
+        <input type="text" id="userInput" placeholder="Type your message..." autocomplete="off" />
+        <button type="submit">Send</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Configuration - UPDATE THIS to your n8n webhook URL
+    const WEBHOOK_URL = "http://localhost:5678/webhook/chat";
+    
+    const chatForm = document.getElementById("chatForm");
+    const chatInput = document.getElementById("userInput");
+    const chatMessages = document.getElementById("chatMessages");
+    const newChatBtn = document.getElementById("new-chat-btn");
+    const typingIndicator = document.getElementById("typingIndicator");
+    const voiceFileInput = document.getElementById("voiceFile");
+    const sendButton = chatForm.querySelector('button[type="submit"]');
+    const sessionInfo = document.getElementById("sessionInfo");
+
+    let selectedFile = null;
+    let sessionId = null;
+
+    // Generate new session ID
+    function generateSessionId() {
+      return new Date().toISOString().replace(/\D/g, "").slice(0, 14);
+    }
+
+    // Initialize or get session ID
+    function initSession() {
+      sessionId = sessionStorage.getItem("sessionId");
+      if (!sessionId) {
+        sessionId = generateSessionId();
+        sessionStorage.setItem("sessionId", sessionId);
+        console.log("✅ New session created:", sessionId);
+      } else {
+        console.log("♻️ Existing session loaded:", sessionId);
+      }
+      updateSessionDisplay();
+    }
+
+    // Update session display
+    function updateSessionDisplay() {
+      if (sessionInfo && sessionId) {
+        sessionInfo.textContent = `ID: ${sessionId.slice(-6)}`;
+      }
+    }
+
+    // Initialize session on load
+    initSession();
+
+    // Append message to chat
+    function addMessage(text, isUser) {
+      const message = document.createElement("div");
+      message.classList.add("message", isUser ? "user-message" : "bot-message");
+      message.textContent = text;
+      chatMessages.insertBefore(message, typingIndicator);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Show error message
+    function showError(message) {
+      const errorDiv = document.createElement("div");
+      errorDiv.className = "error-message";
+      errorDiv.textContent = message;
+      chatMessages.insertBefore(errorDiv, typingIndicator);
+      
+      setTimeout(() => {
+        errorDiv.remove();
+      }, 5000);
+      
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Show typing indicator
+    function showTypingIndicator(show) {
+      typingIndicator.classList.toggle('active', show);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Show file selected indicator
+    function showFileSelected(filename) {
+      const existingIndicator = document.querySelector('.file-selected');
+      if (existingIndicator) {
+        existingIndicator.remove();
+      }
+
+      const fileIndicator = document.createElement('div');
+      fileIndicator.className = 'file-selected';
+      fileIndicator.innerHTML = `🎤 ${filename} <span class="close-btn">✕</span>`;
+      
+      fileIndicator.querySelector('.close-btn').addEventListener('click', clearFileSelection);
+      
+      const inputContainer = document.querySelector('.chat-input-container');
+      inputContainer.parentNode.insertBefore(fileIndicator, inputContainer);
+    }
+
+    // Clear file selection
+    function clearFileSelection() {
+      selectedFile = null;
+      voiceFileInput.value = '';
+      const indicator = document.querySelector('.file-selected');
+      if (indicator) {
+        indicator.remove();
+      }
+    }
+
+    // Send message to webhook
+    async function sendMessage(text = null, file = null) {
+      if (!sessionId) {
+        initSession();
+      }
+
+      try {
+        sendButton.disabled = true;
+        showTypingIndicator(true);
+
+        let body;
+        let headers = {};
+
+        if (file) {
+          // Send voice file with sessionId as FormData
+          const formData = new FormData();
+          formData.append('voice', file);
+          formData.append('sessionId', sessionId);
+          formData.append('message', `Voice message: ${file.name}`);
+          body = formData;
+          // Don't set Content-Type header - let browser set it with boundary
+        } else {
+          // Send text message with sessionId
+          body = JSON.stringify({ 
+            message: text, 
+            sessionId: sessionId
+          });
+          headers['Content-Type'] = 'application/json';
+        }
+
+        const response = await fetch(WEBHOOK_URL, {
+          method: 'POST',
+          headers: headers,
+          body: body
+        });
+
+        showTypingIndicator(false);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // Handle different response formats - prioritize chatResponse for new format
+        const botReply = data.chatResponse || data.output || data.reply || data.message || "No response received.";
+        addMessage(botReply, false);
+
+      } catch (error) {
+        showTypingIndicator(false);
+        console.error('Error:', error);
+        showError(`⚠️ Error: ${error.message}. Make sure your n8n workflow is running at ${WEBHOOK_URL}`);
+      } finally {
+        sendButton.disabled = false;
+      }
+    }
+
+    // Handle file selection
+    voiceFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        selectedFile = file;
+        showFileSelected(file.name);
+      }
+    });
+
+    // Handle form submit
+    chatForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      
+      if (selectedFile) {
+        addMessage(`🎤 Voice message (${selectedFile.name})`, true);
+        await sendMessage(null, selectedFile);
+        clearFileSelection();
+      } else {
+        const text = chatInput.value.trim();
+        if (!text) return;
+        
+        addMessage(text, true);
+        chatInput.value = "";
+        await sendMessage(text, null);
+      }
+    });
+
+    // Reset chat and create new session
+    function resetChat() {
+      // Clear session storage
+      sessionStorage.removeItem("sessionId");
+      
+      // Generate new session
+      sessionId = generateSessionId();
+      sessionStorage.setItem("sessionId", sessionId);
+      
+      console.log("🔄 Chat reset. New session:", sessionId);
+      updateSessionDisplay();
+      
+      // Clear messages but keep typing indicator structure
+      const messages = chatMessages.querySelectorAll('.message, .error-message');
+      messages.forEach(msg => msg.remove());
+      
+      // Add welcome message
+      const welcomeMsg = document.createElement('div');
+      welcomeMsg.className = 'bot-message message';
+      welcomeMsg.textContent = '👋 Hello! I\'m your Payment Gateway Support Assistant. This is a new session. How can I assist you today?';
+      chatMessages.insertBefore(welcomeMsg, typingIndicator);
+      
+      // Clear any selected files
+      clearFileSelection();
+      
+      // Scroll to bottom
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    newChatBtn.addEventListener("click", resetChat);
+
+    // Auto-scroll to bottom on page load
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  </script>
+</body>
+</html>
